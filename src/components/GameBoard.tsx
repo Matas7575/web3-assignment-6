@@ -3,67 +3,27 @@ import Dice from "./Dice";
 import ScoreTable from "./ScoreTable";
 import PlayerList from "./PlayerList";
 
-// Define types for players and dice
-type Player = {
-  id: string;
-  name: string;
-  score: number;
-};
+const GameBoard = ({ gameId }: { gameId: string }) => {
+  const [gameState, setGameState] = useState<any>(null);
 
-type Die = {
-  id: number;
-  value: number;
-};
-
-const GameBoard = () => {
-  // Define state with proper types
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [dice, setDice] = useState<Die[]>([]);
-
-  // Fetch initial data
+  // Fetch game data
   useEffect(() => {
-    const fetchGameData = async () => {
-      try {
-        const playerResponse = await fetch("/api/players");
-        const diceResponse = await fetch("/api/dice");
-        const players = await playerResponse.json();
-        const dice = await diceResponse.json();
-
-        setPlayers(players);
-        setDice(dice);
-      } catch (error) {
-        console.error("Error fetching game data:", error);
-      }
+    const fetchGameState = async () => {
+      const response = await fetch(`/api/games/${gameId}`);
+      const data = await response.json();
+      setGameState(data);
     };
+    fetchGameState();
+  }, [gameId]);
 
-    fetchGameData();
-  }, []);
-
-  // Handle rolling dice
-  const rollDice = async (dieId: number) => {
-    try {
-      const response = await fetch("/api/dice/roll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dieId }),
-      });
-      const updatedDie: Die = await response.json();
-      setDice((prevDice) =>
-        prevDice.map((die) => (die.id === dieId ? updatedDie : die))
-      );
-    } catch (error) {
-      console.error("Error rolling dice:", error);
-    }
-  };
+  if (!gameState) return <div>Loading...</div>;
 
   return (
     <div>
-      <h2>Game Board</h2>
-      <PlayerList players={players} />
-      {dice.map((die) => (
-        <Dice key={die.id} value={die.value} onRoll={() => rollDice(die.id)} />
-      ))}
-      <ScoreTable players={players} />
+      <h2>Game: {gameState.name}</h2>
+      <PlayerList players={gameState.players} />
+      <Dice dice={gameState.yahtzeeState?.dice} />
+      <ScoreTable scores={gameState.yahtzeeState?.scores} />
     </div>
   );
 };

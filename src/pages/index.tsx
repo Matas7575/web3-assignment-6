@@ -9,23 +9,56 @@ const Home = () => {
   const { setUsername } = useUser();
   const router = useRouter();
 
-  // useEffect(() => {
-  //   const savedUsername = localStorage.getItem("username");
-  //   if (savedUsername) {
-  //     setUsername(savedUsername); // Set username in context
-  //     router.push("/lobby"); // Redirect to lobby
-  //   }
-  // }, [setUsername, router]);
+  const [lobbies, setLobbies] = useState<any[]>([]);
+
+  // Fetch the list of lobbies
+  useEffect(() => {
+    const fetchLobbies = async () => {
+      const response = await fetch("/api/games");
+      const data = await response.json();
+      setLobbies(data);
+    };
+    fetchLobbies();
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (localUsername) {
       setUsername(localUsername);
       localStorage.setItem("username", localUsername); // Save username
-      router.push("/lobby"); // Redirect to lobby
     } else {
       alert("Please enter a username.");
     }
+  };
+
+  const handleJoinLobby = async (gameId: string) => {
+    if (!localUsername) {
+      alert("Please log in with a username first.");
+      return;
+    }
+    const response = await fetch("/api/games", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameId, username: localUsername, action: "join" }),
+    });
+
+    router.push(`/lobby/${gameId}`);
+  };
+
+  const handleCreateLobby = async () => {
+    if (!localUsername) {
+      alert("Please log in with a username first.");
+      return;
+    }
+
+    const response = await fetch("/api/games", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: localUsername }),
+    });
+
+    const newLobby = await response.json();
+    router.push(`/lobby/${newLobby.id}`);
   };
 
   return (
@@ -40,6 +73,20 @@ const Home = () => {
         />
         <button type="submit">Login</button>
       </form>
+
+      <h2>Available Lobbies</h2>
+      <ul>
+        {lobbies.map((lobby) => (
+          <li key={lobby.id}>
+            <span>
+              {lobby.name} - {lobby.players.length} players
+            </span>
+            <button onClick={() => handleJoinLobby(lobby.id)}>Join</button>
+          </li>
+        ))}
+      </ul>
+
+      <button onClick={handleCreateLobby}>Create a New Lobby</button>
     </div>
   );
 };

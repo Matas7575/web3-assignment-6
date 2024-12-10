@@ -1,131 +1,80 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
-
-type Game = {
-  id: string;
-  name: string;
-  host: string;
-  players: string[];
-  ready: boolean;
-  started: boolean;
-  yahtzeeState?: YahtzeeState;
-};
-
-type YahtzeeState = {
-  currentPlayer: string;
-  dice: number[];
-  rollsLeft: number;
-};
+import { useRouter } from "next/router";
 
 const Lobby = () => {
-  const [games, setGames] = useState<Game[]>([]); // Define the type for games
+  const router = useRouter();
+  const { id: gameId } = router.query; // Get the game ID from the URL
+
+  const [game, setGame] = useState<any>(null);
   const [username, setUsername] = useState<string>("");
-  const [playerName, setPlayerName] = useState<string>("");
-  const [currentGameId, setCurrentGameId] = useState<string | null>(null);
-  const [gameReady, setGameReady] = useState<boolean>(false);
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
-  const [yahtzeeState, setYahtzeeState] = useState<YahtzeeState | null>(null);
 
-  // Fetch games periodically
+  // Fetch game details
   useEffect(() => {
-    const interval = setInterval(() => {
-      const fetchGames = async () => {
-        try {
-          const response = await fetch("/api/games");
-          const gamesData: Game[] = await response.json(); // Ensure response matches Game[]
-          setGames(gamesData);
-        } catch (error) {
-          console.error("Failed to fetch games:", error);
-        }
-      };
+    const fetchGame = async () => {
+      if (!gameId) return;
+      const response = await fetch(`/api/games/${gameId}`);
+      const data = await response.json();
+      setGame(data);
+    };
+    fetchGame();
+  }, [gameId]);
 
-      fetchGames();
-    }, 2000); // Poll every 2 seconds
-
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
-
-  useEffect(() => {
-    if (currentGameId) {
-      const currentGame = games.find((game) => game.id === currentGameId);
-      if (currentGame) {
-        setGameReady(currentGame.ready);
-        setGameStarted(currentGame.started);
-        setYahtzeeState(currentGame.yahtzeeState || null);
-      }
+  // Handle joining the lobby
+  const handleJoinLobby = async () => {
+    if (!username.trim()) {
+      alert("Please enter your username.");
+      return;
     }
-  }, [games, currentGameId]);
-
-  const createGame = async () => {
-    const response = await fetch("/api/games", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username }),
-    });
-
-    if (response.ok) {
-      const newGame: Game = await response.json(); // Ensure response matches Game
-      setGames((prevGames) => [...prevGames, newGame]);
-      setCurrentGameId(newGame.id);
-    } else {
-      const error = await response.json();
-      alert(error.error);
-    }
-  };
-
-  const joinGame = async (gameId: string) => {
-    const response = await fetch("/api/games", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameId, username: playerName, action: "join" }),
-    });
-
-    if (response.ok) {
-      const updatedGame: Game = await response.json(); // Ensure response matches Game
-      setGames((prevGames) =>
-        prevGames.map((game) => (game.id === gameId ? updatedGame : game))
-      );
-      setCurrentGameId(gameId);
-    } else {
-      const error = await response.json();
-      alert(error.error);
-    }
-  };
-
-  const startGame = async () => {
-    const response = await fetch("/api/games", {
+    const response = await fetch(`/api/games`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        gameId: currentGameId,
+        gameId,
+        username,
+        action: "join",
+      }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      alert(error.error || "Failed to join the lobby.");
+      return;
+    }
+    const updatedGame = await response.json();
+    setGame(updatedGame);
+  };
+
+  // Start the game if you are the host
+  const handleStartGame = async () => {
+    const response = await fetch(`/api/games`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gameId,
         username,
         action: "start",
       }),
     });
-
-    if (response.ok) {
-      const updatedGame: Game = await response.json(); // Ensure response matches Game
-      setGames((prevGames) =>
-        prevGames.map((game) =>
-          game.id === currentGameId ? updatedGame : game
-        )
-      );
-      setGameStarted(true);
-    } else {
+    if (!response.ok) {
       const error = await response.json();
-      alert(error.error);
+      alert(error.error || "Failed to start the game.");
+      return;
     }
+    router.push(`/game/${gameId}`);
   };
 
-  if (gameStarted && yahtzeeState) {
-    return <YahtzeeGame yahtzeeState={yahtzeeState} />;
-  }
+  if (!game) return <div>Loading...</div>;
 
   return (
     <div>
-      <h1>Lobby</h1>
-      {!currentGameId && (
+      <h1>{game.name}</h1>
+      <h3>Host: {game.host}</h3>
+      <h4>Players:</h4>
+      <ul>
+        {game.players.map((player: string) => (
+          <li key={player}>{player}</li>
+        ))}
+      </ul>
+      {!game.started && (
         <div>
           <input
             type="text"
@@ -133,72 +82,13 @@ const Lobby = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
-          <button onClick={createGame} disabled={!username.trim()}>
-            Create Game
-          </button>
+          <button onClick={handleJoinLobby}>Join Lobby</button>
         </div>
       )}
-
-      {currentGameId && (
-        <div>
-          <h2>
-            You are in a game:{" "}
-            {games.find((game) => game.id === currentGameId)?.name}
-          </h2>
-          {gameReady && (
-            <>
-              {games.find((g) => g.id === currentGameId)?.host === username && (
-                <button onClick={startGame} disabled={gameStarted}>
-                  Start Game
-                </button>
-              )}
-              <p>
-                Players in lobby:{" "}
-                {games.find((g) => g.id === currentGameId)?.players.join(", ")}
-              </p>
-            </>
-          )}
-        </div>
+      {game.host === username && game.ready && !game.started && (
+        <button onClick={handleStartGame}>Start Game</button>
       )}
-
-      <h2>Available Games</h2>
-      <ul>
-        {games
-          .filter((game) => game.id !== currentGameId)
-          .map((game) => (
-            <li key={game.id}>
-              {game.name} - Players: {game.players.join(", ")}
-              {!currentGameId && (
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Enter your name"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                  />
-                  <button
-                    onClick={() => joinGame(game.id)}
-                    disabled={!playerName.trim()}
-                  >
-                    Join Game
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-      </ul>
-    </div>
-  );
-};
-
-const YahtzeeGame = ({ yahtzeeState }: { yahtzeeState: YahtzeeState }) => {
-  return (
-    <div>
-      <h1>Yahtzee Game</h1>
-      <p>Current Player: {yahtzeeState.currentPlayer}</p>
-      <p>Dice: {yahtzeeState.dice.join(", ")}</p>
-      <p>Rolls Left: {yahtzeeState.rollsLeft}</p>
-      {/* Implement additional game logic and UI */}
+      {!game.ready && <p>Waiting for more players...</p>}
     </div>
   );
 };

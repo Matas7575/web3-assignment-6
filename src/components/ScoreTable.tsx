@@ -1,27 +1,44 @@
 import React from "react";
 
-const ScoreTable = ({
-  players,
-}: {
-  players: { name: string; score: number }[];
-}) => {
+interface ScoreBoardProps {
+  scores: Record<string, Record<string, number | undefined>>;
+}
+
+const ScoreTable: React.FC<ScoreBoardProps> = ({ scores }) => {
+  if (!scores) return null;
+
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Player</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        {players.map((player, index) => (
-          <tr key={index}>
-            <td>{player.name}</td>
-            <td>{player.score}</td>
+    <div>
+      <h3>Scoreboard</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Ones</th>
+            <th>Twos</th>
+            <th>Threes</th>
+            <th>Fours</th>
+            <th>Fives</th>
+            <th>Sixes</th>
+            <th>Total</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {Object.entries(scores).map(([player, score]) => (
+            <tr key={player}>
+              <td>{player}</td>
+              <td>{score.ones || "-"}</td>
+              <td>{score.twos || "-"}</td>
+              <td>{score.threes || "-"}</td>
+              <td>{score.fours || "-"}</td>
+              <td>{score.fives || "-"}</td>
+              <td>{score.sixes || "-"}</td>
+              <td>{score.total || 0}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

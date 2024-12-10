@@ -1,4 +1,4 @@
-import GameBoard from "@/components/GameBoard";
+import GameBoard from "@/components/common/GameBoard";
 import { useRouter } from "next/router";
 
 const GamePage = () => {
@@ -8,7 +8,7 @@ const GamePage = () => {
   return (
     <div>
       <h1>Game ID: {gameId}</h1>
-      <GameBoard />
+      {gameId && <GameBoard gameId={gameId as string} />}
     </div>
   );
 };
