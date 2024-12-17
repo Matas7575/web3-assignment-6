@@ -1,6 +1,14 @@
+// src/pages/lobby/[id].tsx
+
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import ScoreTable from "@/components/ScoreTable";
+import { io } from "socket.io-client";
+
+const ALL_CATEGORIES = ["ones", "twos", "threes", "fours", "fives", "sixes"];
+
+let socket: any;
 
 const LobbyPage = () => {
   const router = useRouter();
@@ -10,93 +18,108 @@ const LobbyPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!lobbyId) return;
+    if (!lobbyId || typeof lobbyId !== "string") return;
 
+    // Fetch initial lobby data
     const fetchLobby = async () => {
-      const response = await fetch(`/api/games?gameId=${lobbyId}`);
-      const data = await response.json();
-      setLobby(data);
-      setLoading(false);
+      try {
+        const response = await fetch(`/api/games?gameId=${lobbyId}`);
+        if (!response.ok) {
+          throw new Error(`Error fetching lobby: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log("Initial lobby data fetched:", data);
+        setLobby(data);
+      } catch (error) {
+        console.error("Failed to fetch lobby:", error);
+        alert("Failed to load lobby. Redirecting to home.");
+        router.push("/");
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchLobby();
-  }, [lobbyId]);
 
-  const handleJoin = async () => {
+    // Connect to the Socket.IO server
+    socket = io("http://localhost:3000");
+
+    // Join the room for this game
+    socket.emit("joinGameRoom", lobbyId);
+
+    socket.on("gameUpdate", (data: any) => {
+      console.log("Received game update:", data);
+      if (data.type === "update" && data.game.id === lobbyId) {
+        setLobby(data.game);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [lobbyId, router]);
+
+  const handleAction = async (action: string, payload: any = {}) => {
     try {
       const username = localStorage.getItem("username");
+      if (!username) {
+        alert("Username not found. Please set your username.");
+        return;
+      }
+
       const response = await fetch(`/api/games`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: lobbyId, username, action: "join" }),
+        body: JSON.stringify({ gameId: lobbyId, username, action, ...payload }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Unknown error");
+      }
+
       const data = await response.json();
-      setLobby(data);
-    } catch (error) {
-      console.error(error);
+      console.log(`Action '${action}' performed successfully:`, data);
+      setLobby(data); // Optional: Immediate update
+    } catch (error: any) {
+      console.error(`Error performing action '${action}':`, error);
+      alert(error.message || "An error occurred.");
     }
   };
 
-  const handleStartGame = async () => {
-    try {
-      const username = localStorage.getItem("username");
-      const response = await fetch(`/api/games`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId: lobbyId, username, action: "start" }),
-      });
-      const data = await response.json();
-      setLobby(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleRollDice = async () => {
-    const username = localStorage.getItem("username");
-    const response = await fetch(`/api/games`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameId: lobbyId, username, action: "rollDice" }),
-    });
-    const data = await response.json();
-    setLobby(data);
-  };
-
-  const handleHoldDice = async (index: number) => {
-    const username = localStorage.getItem("username");
-    const response = await fetch(`/api/games`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        gameId: lobbyId,
-        username,
-        action: "holdDice",
-        diceIndexes: [index],
-      }),
-    });
-    const data = await response.json();
-    setLobby(data);
-  };
-
-  const handleScoreCategory = async (category: string) => {
-    const username = localStorage.getItem("username");
-    const response = await fetch(`/api/games`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        gameId: lobbyId,
-        username,
-        action: "scoreCategory",
-        category,
-      }),
-    });
-    const data = await response.json();
-    setLobby(data);
-  };
+  const handleJoin = () => handleAction("join");
+  const handleStartGame = () => handleAction("start");
+  const handleRollDice = () => handleAction("rollDice");
+  const handleHoldDice = (index: number) =>
+    handleAction("holdDice", { diceIndexes: [index] });
+  const handleScoreCategory = (category: string) =>
+    handleAction("scoreCategory", { category });
 
   if (loading) return <p>Loading...</p>;
   if (!lobby) return <p>Lobby not found</p>;
+
+  const determineWinner = () => {
+    // Ensure all players have filled all categories
+    const allScored = lobby.players.every((player: string) => {
+      const scores = lobby.yahtzeeState.scores[player];
+      return ALL_CATEGORIES.every((category) => scores[category] !== undefined);
+    });
+
+    if (!allScored) {
+      return "Game is not yet complete.";
+    }
+
+    const winner = Object.entries(lobby.yahtzeeState.scores).reduce(
+      (winnerAcc, [player, score]) => {
+        const typedScore = score as { total: number };
+        return typedScore.total > (winnerAcc.score?.total || 0)
+          ? { player, score: typedScore }
+          : winnerAcc;
+      },
+      { player: "No Winner", score: { total: 0 } }
+    );
+    return winner.player;
+  };
 
   return (
     <div>
@@ -111,12 +134,46 @@ const LobbyPage = () => {
       {lobby.started ? (
         <div>
           <h2>Game Started</h2>
-          <p>Current Player: {lobby.yahtzeeState?.currentPlayer}</p>
-          <p>Rolls Left: {lobby.yahtzeeState?.rollsLeft}</p>
-          <div>
-            {lobby.yahtzeeState?.dice?.map((die, index) => (
-              <button key={index} onClick={() => handleHoldDice(index)}>
-                {die} {lobby.yahtzeeState?.heldDice[index] ? "(Held)" : ""}
+          <p>Current Player: {lobby.yahtzeeState?.currentPlayer || "N/A"}</p>
+          <p>Rolls Left: {lobby.yahtzeeState?.rollsLeft ?? "N/A"}</p>
+          <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+            {lobby.yahtzeeState?.dice?.map((die: number, index: number) => (
+              <button
+                key={index}
+                onClick={() => handleHoldDice(index)}
+                style={{
+                  position: "relative",
+                  padding: "0",
+                  border: lobby.yahtzeeState?.heldDice[index]
+                    ? "2px solid green"
+                    : "1px solid gray",
+                  borderRadius: "8px",
+                  background: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <Image
+                  src={`/assets/${die}.png`}
+                  alt={`Die ${die}`}
+                  width={60}
+                  height={60}
+                />
+                {lobby.yahtzeeState?.heldDice[index] && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "5px",
+                      right: "5px",
+                      backgroundColor: "rgba(0, 255, 0, 0.7)",
+                      color: "white",
+                      padding: "2px 5px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                    }}
+                  >
+                    Held
+                  </span>
+                )}
               </button>
             )) || <p>No dice available</p>}
           </div>
@@ -125,31 +182,18 @@ const LobbyPage = () => {
           <ScoreTable scores={lobby.yahtzeeState?.scores} />
 
           {lobby.yahtzeeState.gameOver ? (
-            <h3>
-              Game Over! Winner:{" "}
-              {
-                Object.entries(lobby.yahtzeeState.scores).reduce(
-                  (winner, [player, score]) =>
-                    score.total > (winner.score?.total || 0)
-                      ? { player, score }
-                      : winner,
-                  {}
-                ).player
-              }
-            </h3>
+            <h3>Game Over! Winner: {determineWinner()}</h3>
           ) : (
             <div>
               <h3>Score Your Dice</h3>
               <ul>
-                {["ones", "twos", "threes", "fours", "fives", "sixes"].map(
-                  (category) => (
-                    <li key={category}>
-                      <button onClick={() => handleScoreCategory(category)}>
-                        Score {category}
-                      </button>
-                    </li>
-                  )
-                )}
+                {ALL_CATEGORIES.map((category) => (
+                  <li key={category}>
+                    <button onClick={() => handleScoreCategory(category)}>
+                      Score {category}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
           )}
@@ -157,6 +201,10 @@ const LobbyPage = () => {
       ) : (
         <button onClick={handleStartGame}>Start Game</button>
       )}
+      {!lobby.started &&
+        !lobby.players.includes(localStorage.getItem("username") || "") && (
+          <button onClick={handleJoin}>Join Game</button>
+        )}
     </div>
   );
 };

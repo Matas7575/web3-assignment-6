@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
+import { io } from "socket.io-client";
+
+let socket: any;
 
 const Home = () => {
   const [localUsername, setLocalUsername] = useState("");
@@ -19,6 +22,24 @@ const Home = () => {
       setLobbies(data);
     };
     fetchLobbies();
+
+    // Connect to the Socket.IO server
+    socket = io("http://localhost:3000");
+
+    // Join the room for this game
+    // socket.emit("joinGameRoom", lobbyId);
+
+    socket.on("gameUpdate", (data: any) => {
+      console.log("Received game update:", data);
+      if (data.type === "update") {
+        setLobbies(data.game);
+        console.log("Lobbies updated:", data.game);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -76,14 +97,18 @@ const Home = () => {
 
       <h2>Available Lobbies</h2>
       <ul>
-        {lobbies.map((lobby) => (
-          <li key={lobby.id}>
-            <span>
-              {lobby.name} - {lobby.players.length} players
-            </span>
-            <button onClick={() => handleJoinLobby(lobby.id)}>Join</button>
-          </li>
-        ))}
+        {lobbies.length ? (
+          lobbies.map((lobby) => (
+            <li key={lobby.id}>
+              <span>
+                {lobby.name} - {lobby.players.length} players
+              </span>
+              <button onClick={() => handleJoinLobby(lobby.id)}>Join</button>
+            </li>
+          ))
+        ) : (
+          <li>No lobbies available</li>
+        )}
       </ul>
 
       <button onClick={handleCreateLobby}>Create a New Lobby</button>

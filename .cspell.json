@@ -1,0 +1,22 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "React",
+    "State",
+    "Effect",
+    "cSpell",
+    "Dice",
+    "Yahtzee",
+    "JSON",
+    "const",
+    "fetch",
+    "async",
+    "await",
+    "response",
+    "game",
+    "scores",
+    "export",
+    "default"
+  ]
+}
