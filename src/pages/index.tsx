@@ -92,7 +92,6 @@ const Home = () => {
           onChange={(e) => setLocalUsername(e.target.value)}
           placeholder="Enter your username"
         />
-        <button type="submit">Login</button>
       </form>
 
       <h2>Available Lobbies</h2>
