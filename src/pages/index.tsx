@@ -3,59 +3,100 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+import styles from '@/styles/Home.module.css';
+import { Game } from "@/types";
 
 let socket: any;
 
 /**
- * Home component to manage the main page of the application.
+ * The main landing page component.
+ * Handles user authentication and game lobby management.
+ * 
+ * Features:
+ * - User login functionality
+ * - Display of available game lobbies
+ * - Creation of new game lobbies
+ * - Joining existing games
+ * 
+ * @page
+ * @example
+ * // Page is accessed via root URL: /
+ * // Internal route configuration
+ * {
+ *   path: '/',
+ *   component: Home
+ * }
+ * 
+ * @remarks
+ * - Stores username in localStorage
+ * - Updates lobby list in real-time
+ * - Handles lobby creation and joining
  */
-const Home = () => {
+const Home: NextPage = () => {
   const [localUsername, setLocalUsername] = useState("");
   const [loginSuccess, setLoginSuccess] = useState(false);
   const { setUsername } = useUser();
   const router = useRouter();
+  const [lobbies, setLobbies] = useState<Game[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  const [lobbies, setLobbies] = useState<any[]>([]);
-
-  // Fetch the list of lobbies
+  // Initialize socket connection and fetch lobbies
   useEffect(() => {
+    // Connect to Socket.IO server
+    const newSocket = io("http://localhost:3000");
+    setSocket(newSocket);
+
+    // Initial fetch of lobbies
     const fetchLobbies = async () => {
-      const response = await fetch("/api/games");
-      const data = await response.json();
-      setLobbies(data);
+      try {
+        const response = await fetch("/api/games");
+        const data = await response.json();
+        console.log('Fetched lobbies:', data);
+        setLobbies(data);
+      } catch (error) {
+        console.error('Error fetching lobbies:', error);
+      }
     };
+
     fetchLobbies();
 
-    // Connect to the Socket.IO server
-    socket = io("http://localhost:3000");
-
-    // Listen for game updates from the server
-    socket.on("gameUpdate", (data: any) => {
+    // Listen for lobby updates
+    newSocket.on("gameUpdate", (data: { type: string; game: Game }) => {
       console.log("Received game update:", data);
       if (data.type === "update") {
-        setLobbies(data.game);
-        console.log("Lobbies updated:", data.game);
+        // Update the specific lobby in the list
+        setLobbies(prevLobbies => {
+          const updatedLobbies = [...prevLobbies];
+          const index = updatedLobbies.findIndex(lobby => lobby.id === data.game.id);
+          if (index !== -1) {
+            updatedLobbies[index] = data.game;
+          } else {
+            updatedLobbies.push(data.game);
+          }
+          return updatedLobbies;
+        });
       }
     });
 
-    // Cleanup function to disconnect the socket when the component unmounts
+    // Cleanup
     return () => {
-      socket.disconnect();
+      newSocket.disconnect();
     };
   }, []);
 
   /**
-   * Handles user login.
+   * Handles user login form submission.
+   * Validates and stores the username.
    * 
-   * @param {React.FormEvent} e - The form event.
+   * @param {React.FormEvent} e - The form submission event
    */
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (localUsername) {
       setUsername(localUsername);
-      localStorage.setItem("username", localUsername); // Save username
-      setLoginSuccess(true); // Set login success to true
+      localStorage.setItem("username", localUsername);
+      setLoginSuccess(true);
     } else {
       alert("Please enter a username.");
     }
@@ -77,7 +118,11 @@ const Home = () => {
       const response = await fetch("/api/games", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameId, username: storedUsername, action: "join" }),
+        body: JSON.stringify({ 
+          gameId, 
+          username: storedUsername, 
+          action: "join" 
+        }),
       });
 
       if (!response.ok) {
@@ -85,6 +130,8 @@ const Home = () => {
         throw new Error(errorData.error || "Failed to join the lobby.");
       }
 
+      const data = await response.json();
+      console.log('Successfully joined lobby:', data);
       router.push(`/lobby/${gameId}`);
     } catch (error: any) {
       console.error(`Error joining lobby '${gameId}':`, error);
@@ -102,47 +149,76 @@ const Home = () => {
       return;
     }
 
-    const response = await fetch("/api/games", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: storedUsername }),
-    });
+    try {
+      const response = await fetch("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: storedUsername }),
+      });
 
-    const newLobby = await response.json();
-    router.push(`/lobby/${newLobby.id}`);
+      const newLobby = await response.json();
+      console.log('Created new lobby:', newLobby);
+      router.push(`/lobby/${newLobby.id}`);
+    } catch (error) {
+      console.error('Error creating lobby:', error);
+      alert("Failed to create lobby.");
+    }
   };
 
   return (
-    <div>
-      <h1>Welcome to Yahtzee!</h1>
-      <form onSubmit={handleLogin}>
+    <div className={styles.container}>
+      <h1 className={styles.heading}>Welcome to Yahtzee!</h1>
+      
+      {/* Login Form */}
+      <form onSubmit={handleLogin} className={styles.form}>
         <input
           type="text"
           value={localUsername}
           onChange={(e) => setLocalUsername(e.target.value)}
           placeholder="Enter your username"
+          className={styles.input}
         />
-        <button type="submit">Login</button>
+        <button type="submit" className={styles.button}>Login</button>
       </form>
-      {loginSuccess && <p>Login successful!</p>}
+      
+      {loginSuccess && <p className={styles.successMessage}>Login successful!</p>}
 
-      <h2>Available Lobbies</h2>
-      <ul>
-        {lobbies.length ? (
-          lobbies.map((lobby) => (
-            <li key={lobby.id}>
-              <span>
-                {lobby.name} - {lobby.players.length} players
-              </span>
-              <button onClick={() => handleJoinLobby(lobby.id)}>Join</button>
-            </li>
-          ))
-        ) : (
-          <li>No lobbies available</li>
-        )}
-      </ul>
+      {/* Lobbies List */}
+      <h2 className={styles.heading}>Available Lobbies</h2>
+      <div className={styles.lobbies}>
+        <ul className={styles.lobbiesList}>
+          {lobbies.length > 0 ? (
+            lobbies.map((lobby) => (
+              <li key={lobby.id} className={styles.lobbyItem}>
+                <div className={styles.lobbyInfo}>
+                  <span className={styles.lobbyName}>{lobby.name}</span>
+                  <span className={styles.playerCount}>
+                    Players: {lobby.players.join(', ')} ({lobby.players.length})
+                  </span>
+                </div>
+                <button 
+                  onClick={() => handleJoinLobby(lobby.id)} 
+                  className={styles.button}
+                  disabled={lobby.players.includes(localStorage.getItem("username") || "")}
+                >
+                  {lobby.players.includes(localStorage.getItem("username") || "") 
+                    ? "Already Joined" 
+                    : "Join"}
+                </button>
+              </li>
+            ))
+          ) : (
+            <li className={styles.lobbyItem}>No lobbies available</li>
+          )}
+        </ul>
+      </div>
 
-      <button onClick={handleCreateLobby}>Create a New Lobby</button>
+      <button 
+        onClick={handleCreateLobby} 
+        className={`${styles.button} ${styles.createButton}`}
+      >
+        Create a New Lobby
+      </button>
     </div>
   );
 };

@@ -19,18 +19,45 @@ export const handleJoin = (
   username: string,
   res: NextApiResponse
 ) => {
+  // Validate inputs
+  if (!game || !username) {
+    return res.status(400).json({ error: "Invalid game or username" });
+  }
+
+  // Check if player is already in the game
   if (game.players.includes(username)) {
     return res.status(400).json({ error: "User already in the game" });
   }
 
-  game.players.push(username);
-  game.ready = game.players.length >= 2;
-  console.log(`${username} joined game ${game.id}`);
-
-  if (global._io) {
-    global._io.to(game.id).emit("gameUpdate", { type: "update", game });
-    global._io.emit("gameUpdate", { type: "update", game });
+  // Check if game has already started
+  if (game.started) {
+    return res.status(400).json({ error: "Game has already started" });
   }
+
+  // Add player to the game
+  game.players.push(username);
+  
+  // Update game ready status
+  game.ready = game.players.length >= 2;
+
+  // Emit update to all clients
+  if (global._io) {
+    // Emit to the specific game room
+    global._io.to(game.id).emit("gameUpdate", { 
+      type: "update", 
+      game 
+    });
+    
+    // Emit to all clients to update lobby list
+    global._io.emit("gameUpdate", { 
+      type: "update", 
+      game 
+    });
+  }
+
+  // Log the update
+  console.log(`Player ${username} joined game ${game.id}`);
+  console.log('Current players:', game.players);
 
   return res.status(200).json(game);
 };
@@ -97,11 +124,18 @@ export const handleRollDice = (
     return res.status(400).json({ error: "No rolls left!" });
   }
 
-  game.yahtzeeState.dice = game.yahtzeeState.dice.map((die, index) =>
-    game.yahtzeeState!.heldDice[index] ? die : Math.ceil(Math.random() * 6)
+  // If this is the first roll of the turn, reset held dice
+  if (!game.yahtzeeState.turnStarted) {
+    game.yahtzeeState.heldDice = [false, false, false, false, false];
+  }
+
+  // Roll the dice
+  game.yahtzeeState.dice = game.yahtzeeState.dice.map((_, index) =>
+    game.yahtzeeState!.heldDice[index] ? game.yahtzeeState!.dice[index] : Math.ceil(Math.random() * 6)
   );
 
   game.yahtzeeState.rollsLeft -= 1;
+  game.yahtzeeState.turnStarted = true; // Mark that the turn has started
 
   if (global._io) {
     global._io.to(game.id).emit("gameUpdate", { type: "update", game });
@@ -122,7 +156,7 @@ export const handleRollDice = (
 export const handleHoldDice = (
   game: Game,
   username: string,
-  diceIndexes: any,
+  diceIndexes: number[],
   res: NextApiResponse
 ) => {
   if (!game.started || !game.yahtzeeState) {
@@ -133,19 +167,23 @@ export const handleHoldDice = (
     return res.status(403).json({ error: "Not your turn!" });
   }
 
+  if (!game.yahtzeeState.turnStarted) {
+    return res.status(400).json({ error: "Must roll dice before holding" });
+  }
+
   if (
     !Array.isArray(diceIndexes) ||
-    !diceIndexes.every(
-      (index: any) => typeof index === "number" && index >= 0 && index < 5
-    )
+    !diceIndexes.every((index) => typeof index === "number" && index >= 0 && index < 5)
   ) {
     return res.status(400).json({
       error: "diceIndexes must be an array of numbers between 0 and 4",
     });
   }
 
-  diceIndexes.forEach((index: number) => {
-    game.yahtzeeState!.heldDice[index] = !game.yahtzeeState!.heldDice[index];
+  diceIndexes.forEach((index) => {
+    if (game.yahtzeeState!.dice[index] !== 0) { // Only allow holding dice that have been rolled
+      game.yahtzeeState!.heldDice[index] = !game.yahtzeeState!.heldDice[index];
+    }
   });
 
   if (global._io) {

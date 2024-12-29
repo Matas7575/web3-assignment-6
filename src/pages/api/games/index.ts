@@ -43,6 +43,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 function handleGet(req: NextApiRequest, res: NextApiResponse) {
   const { gameId } = req.query;
 
+  // If gameId is provided, return specific game
   if (gameId && typeof gameId === "string") {
     const game = games.find((g) => g.id === gameId);
     if (!game) {
@@ -51,7 +52,9 @@ function handleGet(req: NextApiRequest, res: NextApiResponse) {
     return res.status(200).json(game);
   }
 
-  return res.status(200).json(games);
+  // Otherwise return all available (not started) games
+  const availableGames = games.filter(game => !game.started);
+  return res.status(200).json(availableGames);
 }
 
 /**
@@ -64,9 +67,9 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
   const { username } = req.body;
 
   if (typeof username !== "string" || username.trim() === "") {
-    return res
-      .status(400)
-      .json({ error: "Username is required and must be a non-empty string" });
+    return res.status(400).json({ 
+      error: "Username is required and must be a non-empty string" 
+    });
   }
 
   const newGame: Game = {
@@ -81,6 +84,7 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
   games.push(newGame);
 
+  // Emit update to all clients
   if (global._io) {
     global._io.emit("gameUpdate", { type: "update", game: newGame });
   }
@@ -97,27 +101,30 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
 function handlePut(req: NextApiRequest, res: NextApiResponse) {
   const { gameId, username, action, category, diceIndexes } = req.body;
 
+  // Validate basic request parameters
   if (typeof gameId !== "string" || gameId.trim() === "") {
-    return res
-      .status(400)
-      .json({ error: "gameId is required and must be a non-empty string" });
+    return res.status(400).json({ 
+      error: "gameId is required and must be a non-empty string" 
+    });
   }
   if (typeof username !== "string" || username.trim() === "") {
-    return res
-      .status(400)
-      .json({ error: "username is required and must be a non-empty string" });
+    return res.status(400).json({ 
+      error: "username is required and must be a non-empty string" 
+    });
   }
   if (typeof action !== "string" || action.trim() === "") {
-    return res
-      .status(400)
-      .json({ error: "action is required and must be a non-empty string" });
+    return res.status(400).json({ 
+      error: "action is required and must be a non-empty string" 
+    });
   }
 
+  // Find the game
   const game = games.find((g) => g.id === gameId);
   if (!game) {
     return res.status(404).json({ error: "Game not found" });
   }
 
+  // Route to appropriate handler based on action
   switch (action) {
     case "join":
       return handleJoin(game, username, res);

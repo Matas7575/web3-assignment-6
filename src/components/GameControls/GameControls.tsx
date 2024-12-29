@@ -1,10 +1,10 @@
 import { FC } from "react";
+import styles from '@/styles/GameControls.module.css';
 
 interface GameControlsProps {
   onJoin: () => void;
   onStart: () => void;
   onRollDice: () => void;
-  onHoldDice: (index: number) => void;
   onScoreCategory: (category: string) => void;
   canJoin: boolean;
   canStart: boolean;
@@ -13,6 +13,8 @@ interface GameControlsProps {
   gameOver: boolean;
   determineWinner: () => string;
   categories: string[];
+  rollsLeft: number;
+  currentPlayer: string;
 }
 
 /**
@@ -21,11 +23,26 @@ interface GameControlsProps {
  * @param {GameControlsProps} props - The properties for the GameControls component.
  * @returns {JSX.Element} - The rendered GameControls component.
  */
-const GameControls: FC<GameControlsProps> = ({
+interface GameControlsProps {
+  onJoin: () => void;
+  onStart: () => void;
+  onRollDice: () => void;
+  onScoreCategory: (category: string) => void;
+  canJoin: boolean;
+  canStart: boolean;
+  canRoll: boolean;
+  canScore: boolean;
+  gameOver: boolean;
+  determineWinner: () => string;
+  categories: string[];
+  rollsLeft?: number;  // Make optional
+  currentPlayer?: string;  // Make optional
+}
+
+const GameControls: React.FC<GameControlsProps> = ({
   onJoin,
   onStart,
   onRollDice,
-  onHoldDice, // eslint-disable-line @typescript-eslint/no-unused-vars
   onScoreCategory,
   canJoin,
   canStart,
@@ -34,30 +51,97 @@ const GameControls: FC<GameControlsProps> = ({
   gameOver,
   determineWinner,
   categories,
+  rollsLeft = 0,  // Provide default value
+  currentPlayer = ''  // Provide default value
 }) => {
-  return (
-    <div>
-      {!gameOver && canStart && <button onClick={onStart}>Start Game</button>}
-      {!gameOver && canJoin && <button onClick={onJoin}>Join Game</button>}
+  const username = localStorage.getItem("username");
+  const isCurrentPlayer = currentPlayer === username;
 
-      {canRoll && <button onClick={onRollDice}>Roll Dice</button>}
+  // Debug logging for button conditions
+  console.log('GameControls render conditions:', {
+    canJoin,
+    canStart,
+    canRoll,
+    canScore,
+    gameOver,
+    username,
+    isCurrentPlayer
+  });
+
+  return (
+    <div className={styles['controls-container']}>
+      <div className={styles['game-status']}>
+        {!gameOver ? (
+          <>
+            <p className={styles['current-player']}>
+              Current Player: {currentPlayer}
+              {isCurrentPlayer && ' (Your Turn)'}
+            </p>
+            {isCurrentPlayer && (
+              <p className={styles['rolls-left']}>
+                Rolls Left: {rollsLeft}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className={styles['game-over']}>
+            <h2>Game Over!</h2>
+            <p className={styles.winner}>
+              Winner: {determineWinner()}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className={styles['action-buttons']}>
+        {/* Always render buttons if conditions are met, regardless of gameOver state */}
+        {canStart && (
+          <button 
+            onClick={onStart}
+            className={styles.button}
+            data-action="start"
+          >
+            Start Game
+          </button>
+        )}
+        
+        {canJoin && (
+          <button 
+            onClick={onJoin}
+            className={styles.button}
+            data-action="join"
+          >
+            Join Game
+          </button>
+        )}
+        
+        {canRoll && (
+          <button 
+            onClick={onRollDice}
+            className={styles.button}
+            data-action="roll"
+          >
+            Roll Dice ({rollsLeft} left)
+          </button>
+        )}
+      </div>
 
       {!gameOver && canScore && (
-        <div>
-          <h3>Score Your Dice</h3>
-          <ul>
+        <div className={styles['scoring-section']}>
+          <h3 className={styles['section-title']}>Score Your Dice</h3>
+          <div className={styles['category-grid']}>
             {categories.map((category) => (
-              <li key={category}>
-                <button onClick={() => onScoreCategory(category)}>
-                  Score {category}
-                </button>
-              </li>
+              <button
+                key={category}
+                onClick={() => onScoreCategory(category)}
+                className={styles['category-button']}
+              >
+                Score {category.charAt(0).toUpperCase() + category.slice(1)}
+              </button>
             ))}
-          </ul>
+          </div>
         </div>
       )}
-
-      {gameOver && <h3>Game Over! Winner: {determineWinner()}</h3>}
     </div>
   );
 };

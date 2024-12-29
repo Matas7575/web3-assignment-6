@@ -1,0 +1,58 @@
+.game-board {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  .game-board h1 {
+    font-size: var(--font-size-2xl);
+    color: var(--color-text);
+    text-align: center;
+    margin: 0;
+  }
+  
+  .game-section {
+    background: var(--color-surface);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-lg);
+  }
+  
+  .game-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  @media (min-width: 768px) {
+    .game-layout {
+      grid-template-columns: 2fr 1fr;
+    }
+  }
+  
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+  
+  .players-section {
+    grid-column: 1 / -1;
+  }
+  
+  .dice-section {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .controls-section {
+    order: -1;  /* Move controls above dice on mobile */
+  }
+  
+  @media (min-width: 768px) {
+    .controls-section {
+      order: 0;  /* Restore order on desktop */
+    }
+  }
