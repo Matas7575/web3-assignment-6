@@ -1,5 +1,6 @@
 import { YahtzeeState, Scores } from "./types";
 
+// Array of all possible scoring categories in Yahtzee
 export const ALL_CATEGORIES = [
   "ones",
   "twos",
@@ -10,14 +11,16 @@ export const ALL_CATEGORIES = [
   // Add other categories as needed
 ];
 
+/**
+ * Initializes the state of a Yahtzee game for the given players.
+ * 
+ * @param {string[]} players - Array of player usernames.
+ * @returns {YahtzeeState} - The initial state of the Yahtzee game.
+ */
 export function initializeYahtzeeState(players: string[]): YahtzeeState {
   return {
     scores: players.reduce((acc, player) => {
-      acc[player] = ALL_CATEGORIES.reduce((scoreAcc, category) => {
-        scoreAcc[category] = undefined;
-        return scoreAcc;
-      }, {} as Scores);
-      acc[player].total = 0;
+      acc[player] = { total: 0 };
       return acc;
     }, {} as { [player: string]: Scores }),
     dice: [0, 0, 0, 0, 0],
@@ -25,9 +28,18 @@ export function initializeYahtzeeState(players: string[]): YahtzeeState {
     rollsLeft: 3,
     currentPlayer: players[0],
     gameOver: false,
+    turnStarted: false,
+    round: 1
   };
 }
 
+/**
+ * Calculates the score for a given category based on the current dice values.
+ * 
+ * @param {string} category - The scoring category.
+ * @param {number[]} dice - The current values of the dice.
+ * @returns {number} - The calculated score for the category.
+ */
 export function calculateScore(category: string, dice: number[]): number {
   switch (category) {
     case "ones":

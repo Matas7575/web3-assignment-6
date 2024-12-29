@@ -1,7 +1,41 @@
-.dice {
-  width: 50px;
-  height: 50px;
-  text-align: center;
-  border: 1px solid black;
+.dice-container {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  justify-content: center;
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.dice-button {
+  position: relative;
+  padding: var(--spacing-sm);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background: var(--color-surface);
   cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.dice-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dice-button.held {
+  border-color: var(--color-success);
+  background-color: rgba(5, 150, 105, 0.05);
+}
+
+.held-indicator {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background-color: var(--color-success);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
 }

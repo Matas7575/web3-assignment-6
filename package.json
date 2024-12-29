@@ -6,7 +6,8 @@
     "dev": "node server.js",
     "build": "next build",
     "start": "node server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "docs": "typedoc"
   },
   "dependencies": {
     "next": "15.0.3",
@@ -14,6 +15,7 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "uuid": "^11.0.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {
@@ -24,6 +26,7 @@
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "typedoc": "^0.27.6",
     "typescript": "^5"
   }
 }
