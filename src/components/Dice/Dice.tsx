@@ -6,6 +6,12 @@ interface DiceProps {
   onHold: (index: number) => void;
 }
 
+/**
+ * Dice component to display and manage the dice in the game.
+ * 
+ * @param {DiceProps} props - The properties for the Dice component.
+ * @returns {JSX.Element} - The rendered Dice component.
+ */
 const Dice: React.FC<DiceProps> = ({ dice, heldDice, onHold }) => {
   return (
     <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>

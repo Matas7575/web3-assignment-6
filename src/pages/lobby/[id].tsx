@@ -1,5 +1,3 @@
-// pages/lobby/[id].tsx
-
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Dice from "@/components/Dice/Dice";
@@ -11,6 +9,9 @@ import { fetchGame, performAction } from "@/services/gameService";
 
 const ALL_CATEGORIES = ["ones", "twos", "threes", "fours", "fives", "sixes"];
 
+/**
+ * LobbyPage component to manage the game lobby and game state.
+ */
 const LobbyPage = () => {
   const router = useRouter();
   const { id: lobbyId } = router.query;
@@ -41,12 +42,19 @@ const LobbyPage = () => {
 
   // Handle game updates via Socket.io
   const handleGameUpdate = useCallback((updatedGame: any) => {
+    console.log("Game update received:", updatedGame);
     setLobby(updatedGame);
   }, []);
 
   // Initialize socket
   useGameSocket(lobbyId as string, handleGameUpdate);
 
+  /**
+   * Handles performing an action in the game.
+   * 
+   * @param {string} action - The action to perform.
+   * @param {any} payload - The payload for the action.
+   */
   const handleAction = async (action: string, payload: any = {}) => {
     try {
       const username = localStorage.getItem("username");
@@ -69,6 +77,7 @@ const LobbyPage = () => {
     }
   };
 
+  // Action handlers
   const handleJoin = () => handleAction("join");
   const handleStartGame = () => handleAction("start");
   const handleRollDice = () => handleAction("rollDice");
@@ -80,6 +89,11 @@ const LobbyPage = () => {
   if (loading) return <p>Loading...</p>;
   if (!lobby) return <p>Lobby not found</p>;
 
+  /**
+   * Determines the winner of the game.
+   * 
+   * @returns {string} - The username of the winner or a message if the game is not complete.
+   */
   const determineWinner = () => {
     const allScored = lobby.players.every((player: string) => {
       const scores = lobby.yahtzeeState.scores[player];

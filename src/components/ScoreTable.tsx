@@ -4,6 +4,12 @@ interface ScoreBoardProps {
   scores: Record<string, Record<string, number | undefined>>;
 }
 
+/**
+ * ScoreTable component to display the scores of all players.
+ * 
+ * @param {ScoreBoardProps} props - The properties for the ScoreTable component.
+ * @returns {JSX.Element | null} - The rendered ScoreTable component or null if no scores are provided.
+ */
 const ScoreTable: React.FC<ScoreBoardProps> = ({ scores }) => {
   if (!scores) return null;
 

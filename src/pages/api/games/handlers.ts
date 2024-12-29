@@ -6,6 +6,14 @@ import {
   initializeYahtzeeState,
 } from "./utils";
 
+/**
+ * Handles a player joining a game.
+ * 
+ * @param {Game} game - The game object.
+ * @param {string} username - The username of the player joining.
+ * @param {NextApiResponse} res - The API response object.
+ * @returns {NextApiResponse} - The API response.
+ */
 export const handleJoin = (
   game: Game,
   username: string,
@@ -27,6 +35,14 @@ export const handleJoin = (
   return res.status(200).json(game);
 };
 
+/**
+ * Handles starting a game.
+ * 
+ * @param {Game} game - The game object.
+ * @param {string} username - The username of the player starting the game.
+ * @param {NextApiResponse} res - The API response object.
+ * @returns {NextApiResponse} - The API response.
+ */
 export const handleStart = (
   game: Game,
   username: string,
@@ -56,6 +72,14 @@ export const handleStart = (
   return res.status(200).json(game);
 };
 
+/**
+ * Handles rolling the dice in a game.
+ * 
+ * @param {Game} game - The game object.
+ * @param {string} username - The username of the player rolling the dice.
+ * @param {NextApiResponse} res - The API response object.
+ * @returns {NextApiResponse} - The API response.
+ */
 export const handleRollDice = (
   game: Game,
   username: string,
@@ -86,6 +110,15 @@ export const handleRollDice = (
   return res.status(200).json(game);
 };
 
+/**
+ * Handles holding dice in a game.
+ * 
+ * @param {Game} game - The game object.
+ * @param {string} username - The username of the player holding the dice.
+ * @param {number[]} diceIndexes - The indexes of the dice to hold.
+ * @param {NextApiResponse} res - The API response object.
+ * @returns {NextApiResponse} - The API response.
+ */
 export const handleHoldDice = (
   game: Game,
   username: string,
@@ -122,6 +155,15 @@ export const handleHoldDice = (
   return res.status(200).json(game);
 };
 
+/**
+ * Handles scoring a category in a game.
+ * 
+ * @param {Game} game - The game object.
+ * @param {string} username - The username of the player scoring the category.
+ * @param {string} category - The category to score.
+ * @param {NextApiResponse} res - The API response object.
+ * @returns {NextApiResponse} - The API response.
+ */
 export const handleScoreCategory = (
   game: Game,
   username: string,

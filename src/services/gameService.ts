@@ -1,5 +1,12 @@
 // services/gameService.ts
 
+/**
+ * Fetches the game data for a given game ID.
+ * 
+ * @param {string} gameId - The ID of the game to fetch.
+ * @returns {Promise<any>} - A promise that resolves to the game data.
+ * @throws {Error} - Throws an error if the fetch request fails.
+ */
 export const fetchGame = async (gameId: string) => {
   const response = await fetch(`/api/games?gameId=${gameId}`);
   if (!response.ok) {
@@ -8,6 +15,16 @@ export const fetchGame = async (gameId: string) => {
   return response.json();
 };
 
+/**
+ * Performs an action in the game.
+ * 
+ * @param {string} gameId - The ID of the game.
+ * @param {string} username - The username of the player performing the action.
+ * @param {string} action - The action to perform.
+ * @param {any} [payload={}] - The payload for the action.
+ * @returns {Promise<any>} - A promise that resolves to the updated game data.
+ * @throws {Error} - Throws an error if the action request fails.
+ */
 export const performAction = async (
   gameId: string,
   username: string,

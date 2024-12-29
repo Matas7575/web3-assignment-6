@@ -15,11 +15,17 @@ interface GameControlsProps {
   categories: string[];
 }
 
+/**
+ * GameControls component to manage the game actions and controls.
+ * 
+ * @param {GameControlsProps} props - The properties for the GameControls component.
+ * @returns {JSX.Element} - The rendered GameControls component.
+ */
 const GameControls: FC<GameControlsProps> = ({
   onJoin,
   onStart,
   onRollDice,
-  onHoldDice,
+  onHoldDice, // eslint-disable-line @typescript-eslint/no-unused-vars
   onScoreCategory,
   canJoin,
   canStart,

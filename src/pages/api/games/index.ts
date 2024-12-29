@@ -12,6 +12,12 @@ import { initializeYahtzeeState } from "./utils";
 
 let games: Game[] = [];
 
+/**
+ * API handler function to manage different HTTP methods.
+ * 
+ * @param {NextApiRequest} req - The API request object.
+ * @param {NextApiResponse} res - The API response object.
+ */
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
 
@@ -28,6 +34,12 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
+/**
+ * Handles GET requests to fetch game information.
+ * 
+ * @param {NextApiRequest} req - The API request object.
+ * @param {NextApiResponse} res - The API response object.
+ */
 function handleGet(req: NextApiRequest, res: NextApiResponse) {
   const { gameId } = req.query;
 
@@ -42,6 +54,12 @@ function handleGet(req: NextApiRequest, res: NextApiResponse) {
   return res.status(200).json(games);
 }
 
+/**
+ * Handles POST requests to create a new game.
+ * 
+ * @param {NextApiRequest} req - The API request object.
+ * @param {NextApiResponse} res - The API response object.
+ */
 function handlePost(req: NextApiRequest, res: NextApiResponse) {
   const { username } = req.body;
 
@@ -70,6 +88,12 @@ function handlePost(req: NextApiRequest, res: NextApiResponse) {
   res.status(201).json(newGame);
 }
 
+/**
+ * Handles PUT requests to update game state.
+ * 
+ * @param {NextApiRequest} req - The API request object.
+ * @param {NextApiResponse} res - The API response object.
+ */
 function handlePut(req: NextApiRequest, res: NextApiResponse) {
   const { gameId, username, action, category, diceIndexes } = req.body;
 
