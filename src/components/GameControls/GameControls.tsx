@@ -1,7 +1,25 @@
 import { FC } from "react";
 import styles from '@/styles/GameControls.module.css';
 
-interface GameControlsProps {
+/**
+ * Props for the GameControls component.
+ * 
+ * @interface GameControlsProps
+ * @property {() => void} onJoin - Function to handle joining a game
+ * @property {() => void} onStart - Function to handle starting a game
+ * @property {() => void} onRollDice - Function to handle rolling dice
+ * @property {(category: string) => void} onScoreCategory - Function to handle scoring a category
+ * @property {boolean} canJoin - Whether the join button should be enabled
+ * @property {boolean} canStart - Whether the start button should be enabled
+ * @property {boolean} canRoll - Whether the roll button should be enabled
+ * @property {boolean} canScore - Whether scoring is currently allowed
+ * @property {boolean} gameOver - Whether the game is over
+ * @property {() => string} determineWinner - Function to determine the winner
+ * @property {string[]} categories - Array of available scoring categories
+ * @property {number} rollsLeft - Number of rolls remaining
+ * @property {string} currentPlayer - Username of the current player
+ */
+export interface GameControlsProps {
   onJoin: () => void;
   onStart: () => void;
   onRollDice: () => void;
@@ -23,22 +41,6 @@ interface GameControlsProps {
  * @param {GameControlsProps} props - The properties for the GameControls component.
  * @returns {JSX.Element} - The rendered GameControls component.
  */
-interface GameControlsProps {
-  onJoin: () => void;
-  onStart: () => void;
-  onRollDice: () => void;
-  onScoreCategory: (category: string) => void;
-  canJoin: boolean;
-  canStart: boolean;
-  canRoll: boolean;
-  canScore: boolean;
-  gameOver: boolean;
-  determineWinner: () => string;
-  categories: string[];
-  rollsLeft?: number;  // Make optional
-  currentPlayer?: string;  // Make optional
-}
-
 const GameControls: React.FC<GameControlsProps> = ({
   onJoin,
   onStart,

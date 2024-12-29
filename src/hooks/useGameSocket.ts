@@ -1,5 +1,18 @@
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
+import { Game } from "@/pages/api/games/types";
+
+/**
+ * Interface for game update events.
+ * 
+ * @interface GameUpdate
+ * @property {string} type - The type of update event.
+ * @property {Game} game - The updated game data.
+ */
+interface GameUpdate {
+  type: string;
+  game: Game;
+}
 
 /**
  * Custom hook to manage a game socket connection.
@@ -8,7 +21,7 @@ import { io, Socket } from "socket.io-client";
  * @param {function} onGameUpdate - Callback function to handle game updates.
  * @returns {Socket | null} - The socket instance.
  */
-const useGameSocket = (gameId: string, onGameUpdate: (game: any) => void) => {
+const useGameSocket = (gameId: string, onGameUpdate: (game: Game) => void) => {
   // Reference to store the socket instance
   const socketRef = useRef<Socket | null>(null);
 
@@ -23,7 +36,7 @@ const useGameSocket = (gameId: string, onGameUpdate: (game: any) => void) => {
     socketRef.current.emit("joinGameRoom", gameId);
 
     // Listen for game updates from the server
-    socketRef.current.on("gameUpdate", (data: any) => {
+    socketRef.current.on("gameUpdate", (data: GameUpdate) => {
       // Check if the update is for the current game
       if (data.type === "update" && data.game.id === gameId) {
         // Call the callback function with the updated game data

@@ -7,6 +7,19 @@ import {
 } from "./utils";
 
 /**
+ * Interface for a category object.
+ * 
+ * @interface Category
+ * @property {string} category - The category name.
+ * @property {unknown} [key] - Additional category data.
+ * @category Types
+ */
+interface Category {
+  category: string;
+  [key: string]: unknown;
+}
+
+/**
  * Handles a player joining a game.
  * 
  * @param {Game} game - The game object.
@@ -205,7 +218,7 @@ export const handleHoldDice = (
 export const handleScoreCategory = (
   game: Game,
   username: string,
-  category: any,
+  category: string,
   res: NextApiResponse
 ) => {
   if (!game.started || !game.yahtzeeState) {
@@ -226,7 +239,7 @@ export const handleScoreCategory = (
     return res.status(400).json({ error: "Invalid category" });
   }
 
-  if (!game.yahtzeeState.scores[username]) {
+  if (!game.yahtzeeState?.scores[username]) {
     game.yahtzeeState.scores[username] = { total: 0 };
   }
 

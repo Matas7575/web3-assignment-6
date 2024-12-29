@@ -1,6 +1,6 @@
 import Image from "next/image";
 import styles from '@/styles/Dice.module.css';
-import { DiceState } from '../types';
+import { DiceState, YahtzeeState } from '@/pages/api/games/types';
 
 /**
  * Props for the Dice component.
@@ -8,7 +8,7 @@ import { DiceState } from '../types';
  * @interface DiceProps
  * @property {number[]} dice - Array of current dice values (1-6)
  * @property {boolean[]} heldDice - Array indicating which dice are held
- * @property {(index: number) => void} onHold - Function to toggle hold state of a die
+ * @property {(index: number) => void} onHold - Function to handle dice hold toggling
  * @property {boolean} canHold - Whether dice can currently be held
  */
 interface DiceProps {
@@ -22,10 +22,9 @@ interface DiceProps {
  * Component that displays and manages the dice in the game.
  * Shows the current dice values and allows players to hold/unhold dice during their turn.
  * 
- * @component
+ * @module Components
+ * @category Game
  * @example
- * // Basic usage
- * <Dice
  *   dice={[1, 3, 3, 4, 6]}
  *   heldDice={[false, true, true, false, false]}
  *   onHold={(index) => handleHoldDie(index)}

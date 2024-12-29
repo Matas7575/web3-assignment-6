@@ -10,7 +10,7 @@ import {
 } from "./handlers";
 import { initializeYahtzeeState } from "./utils";
 
-let games: Game[] = [];
+const games: Game[] = [];
 
 /**
  * API handler function to manage different HTTP methods.

@@ -20,18 +20,16 @@ export const ALL_CATEGORIES = [
 export function initializeYahtzeeState(players: string[]): YahtzeeState {
   return {
     scores: players.reduce((acc, player) => {
-      acc[player] = ALL_CATEGORIES.reduce((scoreAcc, category) => {
-        scoreAcc[category] = undefined;
-        return scoreAcc;
-      }, {} as Scores);
-      acc[player].total = 0;
+      acc[player] = { total: 0 };
       return acc;
     }, {} as { [player: string]: Scores }),
-    dice: [0, 0, 0, 0, 0], // Initial dice values
-    heldDice: [false, false, false, false, false], // Initial held dice states
-    rollsLeft: 3, // Number of rolls left in the current turn
-    currentPlayer: players[0], // The player whose turn it is
-    gameOver: false, // Whether the game is over
+    dice: [0, 0, 0, 0, 0],
+    heldDice: [false, false, false, false, false],
+    rollsLeft: 3,
+    currentPlayer: players[0],
+    gameOver: false,
+    turnStarted: false,
+    round: 1
   };
 }
 

@@ -2,15 +2,15 @@
 import styles from '@/styles/PlayerList.module.css';
 
 /**
- * Props for the PlayersList component
+ * Props for the PlayersList component.
  * 
  * @interface PlayersListProps
- * @property {string[]} players - Array of player usernames in the game
- * @property {string} currentPlayer - Username of the player whose turn it is
+ * @property {string[]} players - Array of player usernames
+ * @property {string} currentPlayer - Username of the current player
  * @property {string} host - Username of the game host
  * @property {(player: string) => void} [onRemovePlayer] - Optional callback to remove a player
  */
-interface PlayersListProps {
+export interface PlayersListProps {
   players: string[];
   currentPlayer: string;
   host: string;
@@ -22,7 +22,8 @@ interface PlayersListProps {
  * Highlights the current player and shows who is the host.
  * Allows the host to remove other players if the game hasn't started.
  * 
- * @component
+ * @module Components
+ * @category Game
  * @example
  * // Basic usage
  * <PlayersList

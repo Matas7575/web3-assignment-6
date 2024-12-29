@@ -6,9 +6,35 @@ import ScoreTable from "@/components/ScoreTable";
 import GameControls from "@/components/GameControls/GameControls";
 import useGameSocket from "@/hooks/useGameSocket";
 import { fetchGame, performAction } from "@/services/gameService";
+import { Game } from "@/pages/api/games/types";
 import styles from '@/styles/GameBoard.module.css';
 
 const ALL_CATEGORIES = ["ones", "twos", "threes", "fours", "fives", "sixes"];
+
+/**
+ * Interface for error responses from the server.
+ * 
+ * @interface GameError
+ * @property {string} message - The error message.
+ * @property {string} [error] - Optional error details.
+ * @category Types
+ */
+interface GameError {
+  message: string;
+  error?: string;
+}
+
+/**
+ * Interface for game update data received from the server.
+ * 
+ * @interface GameUpdateData
+ * @property {string} type - The type of update event.
+ * @property {Game} game - The updated game data.
+ */
+interface GameUpdateData {
+  type: string;
+  game: Game;
+}
 
 /**
  * The main game lobby page component.
@@ -20,7 +46,8 @@ const ALL_CATEGORIES = ["ones", "twos", "threes", "fours", "fives", "sixes"];
  * - Updates game state in real-time using WebSocket
  * - Manages player turns and game flow
  * 
- * @page
+ * @module Pages
+ * @category Game
  * @example
  * // Page is accessed via URL: /lobby/[gameId]
  * // Internal route configuration
@@ -78,7 +105,7 @@ const LobbyPage = () => {
    * 
    * @param {Game} updatedGame - The updated game state
    */
-  const handleGameUpdate = useCallback((updatedGame: any) => {
+  const handleGameUpdate = useCallback((updatedGame: Game) => {
     console.log("Game update received:", updatedGame);
     setLobby(updatedGame);
   }, []);
@@ -90,14 +117,14 @@ const LobbyPage = () => {
    * Handles performing an action in the game.
    * 
    * @param {string} action - The action to perform.
-   * @param {any} payload - The payload for the action.
+   * @param {Record<string, unknown>} payload - The payload for the action.
    */
-  const handleAction = async (action: string, payload: any = {}) => {
+  const handleAction = async (action: string, payload: Record<string, unknown> = {}) => {
     if (!username) {
       setError("Username not found. Please set your username.");
       return;
     }
-
+  
     try {
       const data = await performAction(
         lobbyId as string,
@@ -107,9 +134,10 @@ const LobbyPage = () => {
       );
       console.log(`Action '${action}' performed successfully:`, data);
       setLobby(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const gameError = error as GameError;
       console.error(`Error performing action '${action}':`, error);
-      setError(error.message || "An error occurred.");
+      setError(gameError.message || "An error occurred.");
     }
   };
 
@@ -132,7 +160,7 @@ const LobbyPage = () => {
 
     const allScored = lobby.players.every((player: string) => {
       const scores = lobby.yahtzeeState?.scores[player];
-      return ALL_CATEGORIES.every((category) => scores[category] !== undefined);
+      return scores ? ALL_CATEGORIES.every((category) => scores[category] !== undefined) : false;
     });
 
     if (!allScored) {

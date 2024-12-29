@@ -1,13 +1,25 @@
 "use client";
 
+import type { NextPage } from 'next';
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "../context/UserContext";
 import { io, Socket } from "socket.io-client";
 import styles from '@/styles/Home.module.css';
-import { Game } from "@/types";
+import { Game } from "@/pages/api/games/types";
 
-let socket: any;
+let socket: Socket | null = null;
+
+/**
+ * Interface for error responses from the server.
+ * 
+ * @interface ErrorResponse
+ * @property {string} error - The error message.
+ * @category Types
+ */
+interface ErrorResponse {
+  error: string;
+}
 
 /**
  * The main landing page component.
@@ -19,7 +31,8 @@ let socket: any;
  * - Creation of new game lobbies
  * - Joining existing games
  * 
- * @page
+ * @module Pages
+ * @category Game
  * @example
  * // Page is accessed via root URL: /
  * // Internal route configuration
@@ -44,7 +57,7 @@ const Home: NextPage = () => {
   // Initialize socket connection and fetch lobbies
   useEffect(() => {
     // Connect to Socket.IO server
-    const newSocket = io("http://localhost:3000");
+    const newSocket: Socket = io("http://localhost:3000");
     setSocket(newSocket);
 
     // Initial fetch of lobbies
@@ -124,18 +137,19 @@ const Home: NextPage = () => {
           action: "join" 
         }),
       });
-
+    
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as ErrorResponse;
         throw new Error(errorData.error || "Failed to join the lobby.");
       }
-
-      const data = await response.json();
+    
+      const data = await response.json() as Game;
       console.log('Successfully joined lobby:', data);
       router.push(`/lobby/${gameId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error(`Error joining lobby '${gameId}':`, error);
-      alert(error.message || "An error occurred while joining the lobby.");
+      alert(err.message || "An error occurred while joining the lobby.");
     }
   };
 

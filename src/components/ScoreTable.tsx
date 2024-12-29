@@ -2,7 +2,7 @@ import React from "react";
 import styles from '@/styles/ScoreTable.module.css';
 
 /**
- * Props for the ScoreTable component
+ * Props for the ScoreTable component.
  * 
  * @interface ScoreTableProps
  * @property {Record<string, Record<string, number | undefined>>} scores - Scores for each player
@@ -10,7 +10,7 @@ import styles from '@/styles/ScoreTable.module.css';
  * @property {(category: string) => void} [onSelectCategory] - Optional callback when a category is selected
  * @property {string[]} [availableCategories] - Optional array of categories that can be selected
  */
-interface ScoreTableProps {
+export interface ScoreTableProps {
   scores: Record<string, Record<string, number | undefined>>;
   currentPlayer: string;
   onSelectCategory?: (category: string) => void;
@@ -22,7 +22,8 @@ interface ScoreTableProps {
  * Highlights the current player and shows which categories can be selected.
  * Calculates and displays various score totals and bonuses.
  * 
- * @component
+ * @module Components
+ * @category Game
  * @example
  * // Basic usage
  * <ScoreTable
@@ -140,7 +141,7 @@ const ScoreTable: React.FC<ScoreTableProps> = ({
                   key={player}
                   className={`${styles.score} ${styles.total}`}
                 >
-                  {playerScores.total + calculateUpperBonus(playerScores)}
+                  {(playerScores.total || 0) + calculateUpperBonus(playerScores)}
                 </td>
               ))}
             </tr>

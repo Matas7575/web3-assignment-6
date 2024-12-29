@@ -1,7 +1,15 @@
 import React, { createContext, useState, useContext, ReactNode } from "react";
 
-// Define the shape of the game context
-interface GameContextType {
+/**
+ * Defines the shape of the game context state.
+ * 
+ * @interface GameContextType
+ * @property {string[]} players - Array of players in the game
+ * @property {React.Dispatch<React.SetStateAction<string[]>>} setPlayers - Function to update players
+ * @property {number[]} dice - Current values of the dice
+ * @property {React.Dispatch<React.SetStateAction<number[]>>} setDice - Function to update dice values
+ */
+export interface GameContextType {
   players: string[];
   setPlayers: React.Dispatch<React.SetStateAction<string[]>>;
   dice: number[];
@@ -12,13 +20,23 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | null>(null);
 
 /**
- * GameProvider component to provide game state to its children.
+ * Props for the GameProvider component.
  * 
- * @param {Object} props - The properties for the GameProvider component.
- * @param {React.ReactNode} props.children - The child components that will have access to the game state.
- * @returns {JSX.Element} - The rendered GameProvider component.
+ * @interface GameProviderProps 
+ * @property {ReactNode} children - Child components that will have access to the game state
  */
-export const GameProvider = ({ children }: { children: ReactNode }) => {
+export interface GameProviderProps {
+  children: ReactNode;
+}
+
+/**
+ * Provider component for game state management.
+ * Provides game state to its children using React Context.
+ * 
+ * @param {GameProviderProps} props - Component props
+ * @returns {JSX.Element} Rendered provider component
+ */
+export const GameProvider = ({ children }: GameProviderProps) => {
   const [players, setPlayers] = useState<string[]>([]);
   const [dice, setDice] = useState<number[]>([]);
 
@@ -30,9 +48,11 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 };
 
 /**
- * Custom hook to use the game context.
+ * Custom hook to access the game context.
+ * Must be used within a GameProvider component.
  * 
- * @returns {GameContextType} - The game context value.
+ * @returns {GameContextType} The game context value
+ * @throws {Error} If used outside of a GameProvider
  */
 export const useGame = () => {
   const context = useContext(GameContext);
